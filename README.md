@@ -1,6 +1,7 @@
 # Campaign+Asset Multi-Tab Output (Excel Only, Figma S3 AmzId Columns)
 
 This Streamlit app generates multi-campaign output sheets with product images and Figma S3 links from an Excel campaign input and a product CSV.
+Format of the Input Excel Header - Campaign Names |	Asset	| Grid Details |	PID1	| Name1 | 	PID2 |	Name2
 
 ## Features
 
