@@ -18,7 +18,7 @@ st.set_page_config(layout="wide")
 st.markdown("""
 **Required Excel Sheet Columns:**
 
-- `Campaign Names | Asset | Grid Details | PID1 |	Name1 |	PID2 | Name2`
+- `Campaign Names | Asset | Grid Details | PID1 | Name1 | PID2 | Name2`
 
 Please ensure your Excel sheet contains these columns with the exact names for proper processing.
 """)
