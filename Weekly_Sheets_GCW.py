@@ -22,7 +22,7 @@ st.markdown("""
 
 Please ensure your Excel sheet contains these columns with the exact names for proper processing.
 """)
-st.title("Campaign+Asset Multi-Tab Output (Excel Only, Figma S3 AmzId Columns)")
+st.title("Campaigns like MagicSale, Holi, IndependenceDay(Seperate Tabs for Hubs, Excel Only, Figma S3 AmzId Columns)")
 
 REQUIRED_COLS = ["Campaign Names", "Asset", "Grid Details", "PID1", "PID2"]
 
