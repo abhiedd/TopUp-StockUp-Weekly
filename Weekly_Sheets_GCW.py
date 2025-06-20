@@ -159,6 +159,12 @@ def has_transparency(img_bytes):
         return False
 
 # --- UI ---
+
+st.set_page_config(layout="wide")
+
+st.markdown("""
+- **Format:** Campaign Names	Asset	Grid Details	PID1	Name1	PID2	Name2.
+
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 product_csv = st.file_uploader("Upload product CSV (with 'MB_id' and 'image_src' columns)", type=["csv"])
 
