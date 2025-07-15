@@ -50,8 +50,8 @@ def make_amz_link(img_src):
     # Replace extension with .png and build Figma S3 URL
     if not img_src:
         return ""
-    img_src_png = re.sub(r'\.\w+$', '.png', img_src)
-    return f"https://design-figma.s3.ap-south-1.amazonaws.com/{img_src_png}"
+    MB_id_png = re.sub(r'\.\w+$', '.png', MB_id)
+    return f"https://design-figma.s3.ap-south-1.amazonaws.com/{MB_id}"
 
 def fix_pid(pid):
     if pd.isna(pid) or str(pid).strip().lower() == "nan":
