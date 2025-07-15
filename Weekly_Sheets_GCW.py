@@ -46,9 +46,9 @@ def make_img_map(product_df):
             src_map[pid] = img_src
     return img_map, src_map
 
-def make_amz_link(img_src):
+def make_amz_link(MB_id):
     # Replace extension with .png and build Figma S3 URL
-    if not img_src:
+    if not MB_id:
         return ""
     MB_id_png = re.sub(r'\.\w+$', '.png', MB_id)
     return f"https://design-figma.s3.ap-south-1.amazonaws.com/{MB_id}"
