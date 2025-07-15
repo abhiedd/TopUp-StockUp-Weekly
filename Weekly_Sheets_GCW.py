@@ -51,7 +51,7 @@ def make_amz_link(MB_id):
     if not MB_id:
         return ""
     MB_id_png = re.sub(r'\.\w+$', '.png', MB_id)
-    return f"https://design-figma.s3.ap-south-1.amazonaws.com/{MB_id}"
+    return f"https://design-figma.s3.ap-south-1.amazonaws.com/{MB_id_png}"
 
 def fix_pid(pid):
     if pd.isna(pid) or str(pid).strip().lower() == "nan":
