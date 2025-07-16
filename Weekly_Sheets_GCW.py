@@ -148,7 +148,7 @@ def get_all_unique_pids(all_rows, img_map, src_map):
             pid = r[pid_col]
             if pid:
                 pid_set.add(pid)
-    all_pids = sorted(pid_set, key=lambda x: int(x) if x.isdigit() else x)
+    all_pids = sorted(pid_set, key=lambda x: (0, int(x)) if str(x).isdigit() else (1, str(x)))
     rows = []
     for pid in all_pids:
         img_link = img_map.get(pid, "")
