@@ -168,6 +168,13 @@ def has_transparency(img_bytes):
     except Exception:
         return False
 
+def remove_bg_u2net(img_bytes):
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+    result = remove(img)  # Uses U^2-Net by default
+    img_byte_arr = io.BytesIO()
+    result.save(img_byte_arr, format='PNG')
+    return img_byte_arr.getvalue()
+
 # --- UI ---
 
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
@@ -239,40 +246,38 @@ if all_rows:
             mime="application/zip"
         )
 
-    if st.button("Download rembg All images.zip (background removed)"):
-        all_img_rows = [r for r in all_pids_tab if r.get("Img Link")]
-        progress = st.progress(0)
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w") as zipf:
-            for idx, item in enumerate(all_img_rows):
-                pid = item["PID"]
-                img_url = item["Img Link"]
-                orig_filename = f"{pid}.png"
-                try:
-                    r = requests.get(img_url, timeout=10)
-                    if r.status_code == 200:
-                        img = Image.open(io.BytesIO(r.content)).convert("RGBA")
-                        if has_transparency(r.content):
-                            img_byte_arr = io.BytesIO()
-                            img.save(img_byte_arr, format='PNG')
-                            zipf.writestr(orig_filename, img_byte_arr.getvalue())
-                        else:
-                            img = img.resize((650,650))
-                            output_image = remove(img)
-                            img_byte_arr = io.BytesIO()
-                            output_image.save(img_byte_arr, format='PNG')
-                            zipf.writestr(orig_filename, img_byte_arr.getvalue())
-                except Exception:
-                    continue
-                progress.progress((idx + 1) / len(all_img_rows))
-        zip_buffer.seek(0)
-        st.success("rembg images ready! Download below.")
-        st.download_button(
-            label="Download rembg_All_PIDs_Images.zip",
-            data=zip_buffer,
-            file_name="rembg_All_PIDs_Images.zip",
-            mime="application/zip"
-        )
+    if st.button("Download rembg All images.zip"):
+    all_img_rows = [r for r in all_pids_tab if r.get("Img Link")]
+    progress = st.progress(0)
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zipf:
+        for idx, item in enumerate(all_img_rows):
+            pid = item["PID"]
+            img_url = item["Img Link"]
+            orig_filename = f"{pid}.png"
+            try:
+                r = requests.get(img_url, timeout=10)
+                if r.status_code == 200:
+                    img_bytes = r.content
+                    if has_transparency(img_bytes):
+                        img_byte_arr = io.BytesIO()
+                        img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+                        img.save(img_byte_arr, format='PNG')
+                        zipf.writestr(orig_filename, img_byte_arr.getvalue())
+                    else:
+                        bg_removed_bytes = remove_bg_u2net(img_bytes)
+                        zipf.writestr(orig_filename, bg_removed_bytes)
+            except Exception:
+                continue
+            progress.progress((idx + 1) / len(all_img_rows))
+    zip_buffer.seek(0)
+    st.success("rembg images ready! Download below.")
+    st.download_button(
+        label="Download rembg_All_PIDs_Images.zip",
+        data=zip_buffer,
+        file_name="rembg_All_PIDs_Images.zip",
+        mime="application/zip"
+    )
 else:
     if uploaded_file:
         st.warning("No product data found after filtering. Check if your sheet tabs/columns are correct.")
