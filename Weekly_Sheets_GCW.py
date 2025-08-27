@@ -246,7 +246,7 @@ if all_rows:
             mime="application/zip"
         )
 
-    if st.button("Download rembg All images.zip"):
+    if    st.button("Download rembg All images.zip"):
     all_img_rows = [r for r in all_pids_tab if r.get("Img Link")]
     progress = st.progress(0)
     zip_buffer = io.BytesIO()
