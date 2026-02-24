@@ -11,6 +11,7 @@ import zipfile
 import io
 import re
 import concurrent.futures
+import streamlit.components.v1 as components
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Milkbasket Campaign Auto-Processor", layout="wide")
@@ -261,95 +262,73 @@ with st.sidebar:
     st.markdown("**2. Campaign Data (Excel)**")
     uploaded_file = st.file_uploader("Upload Messy Campaign Excel", type=["xlsx"])
     
-    # --- 🐾 APP COMPANION (GINGER NERD CAT - PURE SVG) ---
+    # --- 🐾 APP COMPANION (GINGER NERD CAT - HTML COMPONENT) ---
     st.markdown("---")
-    st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 10px;'>Workspace Buddy</div>", unsafe_allow_html=True)
-    st.markdown(
+    st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 5px;'>Workspace Buddy</div>", unsafe_allow_html=True)
+    
+    # Using components.html completely bypasses Streamlit's Markdown parser
+    components.html(
         """
-        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-            <svg width="160" height="160" viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stop-color="#FFF3B0" stop-opacity="0.4"/>
-                        <stop offset="100%" stop-color="#FFF3B0" stop-opacity="0"/>
-                    </radialGradient>
-                </defs>
+        <div style="display: flex; justify-content: center; height: 100%; overflow: hidden;">
+            <svg width="180" height="150" viewBox="20 30 160 140" xmlns="http://www.w3.org/2000/svg">
                 <style>
-                    .paw-l { animation: type-l 0.2s infinite alternate; }
-                    .paw-r { animation: type-r 0.25s infinite alternate-reverse; }
+                    .paw-l { animation: type-l 0.2s infinite alternate; transform-origin: center; }
+                    .paw-r { animation: type-r 0.25s infinite alternate-reverse; transform-origin: center; }
                     .tail { animation: wag 2s ease-in-out infinite alternate; transform-origin: 145px 130px; }
-                    #eye-l { animation: blink 4s infinite; transform-origin: 90px 71px; }
-                    #eye-r { animation: blink 4s infinite; transform-origin: 138px 71px; }
+                    .eye { animation: blink 4s infinite; transform-origin: center; }
                     @keyframes type-l { 0% { transform: translateY(0px); } 100% { transform: translateY(-4px); } }
                     @keyframes type-r { 0% { transform: translateY(0px); } 100% { transform: translateY(-4px); } }
                     @keyframes wag { 0% { transform: rotate(-5deg); } 100% { transform: rotate(15deg); } }
                     @keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
                 </style>
-
-                <g stroke="#34495e" stroke-width="2" stroke-linejoin="round">
-                    <polygon points="25,40 85,55 70,130 10,115" fill="#57606f" />
-                    <polygon points="28,44 82,58 68,126 14,112" fill="#ced6e0" stroke="none" />
-                </g>
-
-                <polygon points="28,44 140,40 160,160 14,112" fill="url(#glow)" style="mix-blend-mode: overlay;" />
-
-                <g stroke="#593618" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    
+                <g stroke="#3e2723" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <g class="tail">
-                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#593618" stroke-width="24"/>
-                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#FFAC4A" stroke-width="18"/>
-                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#D97A29" stroke-width="18" stroke-dasharray="10 15"/>
+                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#3e2723" stroke-width="20"/>
+                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#f0a552" stroke-width="15"/>
+                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#cf7b2b" stroke-width="15" stroke-dasharray="10 15"/>
                     </g>
-                    
-                    <path d="M 85 160 C 85 100 165 100 165 160 Z" fill="#FFAC4A" />
-                    <path d="M 110 160 C 110 125 155 125 160 160 Z" fill="#FFEDC2" stroke="none" />
-                    <path d="M 145 110 Q 155 115 163 112" stroke="#D97A29" stroke-width="3" fill="none"/>
-                    <path d="M 150 125 Q 158 130 164 125" stroke="#D97A29" stroke-width="3" fill="none"/>
-
-                    <polygon points="90,45 80,15 110,38" fill="#FFAC4A" />
-                    <polygon points="138,45 148,15 118,38" fill="#FFAC4A" />
-                    <polygon points="90,42 83,23 105,37" fill="#F19A9B" stroke="none" />
-                    <polygon points="138,42 145,23 123,37" fill="#F19A9B" stroke="none" />
-
-                    <ellipse cx="114" cy="75" rx="42" ry="34" fill="#FFAC4A" />
-                    
-                    <path d="M 114 42 L 114 52 M 104 46 L 109 56 M 124 46 L 119 56" stroke="#D97A29" stroke-width="3" fill="none"/>
-                    
-                    <ellipse cx="114" cy="88" rx="18" ry="12" fill="#FFEDC2" stroke="none" />
-                    <path d="M 114 83 L 110 87 A 4 4 0 0 0 118 87 Z" fill="#E88383" stroke-linejoin="round"/>
-                    <path d="M 114 87 Q 109 92 105 89 M 114 87 Q 119 92 123 89" stroke-width="1.5" fill="none"/>
-                    
-                    <ellipse cx="82" cy="85" rx="7" ry="4" fill="#F19A9B" stroke="none" opacity="0.8" />
-                    <ellipse cx="146" cy="85" rx="7" ry="4" fill="#F19A9B" stroke="none" opacity="0.8" />
-                    
-                    <path d="M 78 80 L 60 75 M 78 86 L 58 86 M 78 92 L 62 97" stroke-width="1.5" fill="none"/>
-                    <path d="M 150 80 L 168 75 M 150 86 L 170 86 M 150 92 L 166 97" stroke-width="1.5" fill="none"/>
+                    <path d="M 85 160 C 85 100 165 100 165 160 Z" fill="#f0a552" />
+                    <path d="M 110 160 C 110 125 155 125 160 160 Z" fill="#ffdfa1" stroke="none" />
+                    <path d="M 145 110 Q 155 115 163 112" stroke="#cf7b2b" stroke-width="3" fill="none"/>
+                    <path d="M 150 125 Q 158 130 164 125" stroke="#cf7b2b" stroke-width="3" fill="none"/>
+                    <polygon points="90,45 80,15 110,38" fill="#f0a552" />
+                    <polygon points="138,45 148,15 118,38" fill="#f0a552" />
+                    <polygon points="90,42 83,23 105,37" fill="#fca4a9" stroke="none" />
+                    <polygon points="138,42 145,23 123,37" fill="#fca4a9" stroke="none" />
+                    <ellipse cx="114" cy="75" rx="42" ry="36" fill="#f0a552" />
+                    <path d="M 114 42 L 114 52 M 104 46 L 109 56 M 124 46 L 119 56" stroke="#cf7b2b" stroke-width="3" fill="none"/>
+                    <ellipse cx="114" cy="90" rx="18" ry="12" fill="#ffdfa1" stroke="none" />
+                    <path d="M 114 85 L 110 89 A 4 4 0 0 0 118 89 Z" fill="#d96a6a" stroke-linejoin="round"/>
+                    <path d="M 114 89 Q 109 94 105 91 M 114 89 Q 119 94 123 91" stroke-width="1.5" fill="none"/>
+                    <ellipse cx="80" cy="88" rx="7" ry="4" fill="#fca4a9" stroke="none" opacity="0.8" />
+                    <ellipse cx="148" cy="88" rx="7" ry="4" fill="#fca4a9" stroke="none" opacity="0.8" />
+                    <path d="M 78 83 L 60 78 M 78 89 L 58 89 M 78 95 L 62 100" stroke-width="1.5" fill="none"/>
+                    <path d="M 150 83 L 168 78 M 150 89 L 170 89 M 150 95 L 166 100" stroke-width="1.5" fill="none"/>
                 </g>
-
-                <circle id="eye-l" cx="90" cy="71" r="4.5" fill="#2C3A47" />
-                <circle id="eye-r" cx="138" cy="71" r="4.5" fill="#2C3A47" />
-                
-                <g stroke="#2C3A47" stroke-width="4.5" fill="rgba(255,255,255,0.15)">
-                    <rect x="70" y="55" width="40" height="30" rx="8" />
-                    <rect x="118" y="55" width="40" height="30" rx="8" />
-                    <line x1="110" y1="70" x2="118" y2="70" />
-                    <line x1="70" y1="65" x2="55" y2="60" stroke-linecap="round"/>
-                    <line x1="158" y1="65" x2="173" y2="60" stroke-linecap="round"/>
+                <circle cx="94" cy="75" r="4.5" fill="#3e2723" class="eye"/>
+                <circle cx="134" cy="75" r="4.5" fill="#3e2723" class="eye"/>
+                <g stroke="#2C3A47" stroke-width="5" fill="rgba(255,255,255,0.15)">
+                    <rect x="75" y="58" width="38" height="34" rx="12" />
+                    <rect x="115" y="58" width="38" height="34" rx="12" />
+                    <line x1="110" y1="75" x2="115" y2="75" stroke-width="4"/>
+                    <line x1="75" y1="70" x2="60" y2="65" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="153" y1="70" x2="168" y2="65" stroke-width="4" stroke-linecap="round"/>
                 </g>
-
                 <g stroke="#34495e" stroke-width="2" stroke-linejoin="round">
-                    <polygon points="10,115 70,130 130,155 10,145" fill="#a4b0be" />
-                    <polygon points="10,145 130,155 130,162 10,152" fill="#747d8c" />
-                    <path d="M 22 124 L 70 134 M 18 132 L 80 143 M 15 140 L 95 152" stroke="#57606f" stroke-width="1.5" opacity="0.6"/>
+                    <polygon points="15,115 75,130 135,155 15,145" fill="#a4b0be" />
+                    <polygon points="15,145 135,155 135,162 15,152" fill="#747d8c" />
+                    <polygon points="30,40 90,55 75,130 15,115" fill="#57606f" />
+                    <polygon points="33,44 87,58 73,126 19,112" fill="#ced6e0" stroke="none" />
                 </g>
-
-                <g stroke="#593618" stroke-width="2.5">
-                    <ellipse class="paw-l" cx="70" cy="138" rx="16" ry="11" fill="#FFAC4A" />
-                    <ellipse class="paw-r" cx="105" cy="146" rx="16" ry="11" fill="#FFAC4A" />
+                <polygon points="33,44 145,40 165,160 19,112" fill="#FFF3B0" opacity="0.15" stroke="none"/>
+                <g stroke="#3e2723" stroke-width="2.5">
+                    <ellipse class="paw-l" cx="75" cy="138" rx="16" ry="11" fill="#f0a552" />
+                    <ellipse class="paw-r" cx="110" cy="146" rx="16" ry="11" fill="#f0a552" />
                 </g>
             </svg>
         </div>
-        """, unsafe_allow_html=True
+        """,
+        height=170
     )
 
 st.title("🚀 Campaign Asset Auto-Processor")
