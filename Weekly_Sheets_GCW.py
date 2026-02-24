@@ -228,7 +228,7 @@ with st.sidebar:
     
     # --- 🐾 APP COMPANION (USER CUSTOM SVG + CSS ANIMATION) ---
     st.markdown("---")
-    st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 5px;'>Workspace Buddy</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 5px;'>What can i do for you?</div>", unsafe_allow_html=True)
     
     components.html(
         """
