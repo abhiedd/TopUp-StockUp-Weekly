@@ -10,6 +10,7 @@ import requests
 import zipfile
 import io
 import re
+import os
 import concurrent.futures
 import streamlit.components.v1 as components
 
@@ -164,11 +165,19 @@ def process_single_image(item, use_rembg=False):
         if r.status_code == 200:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
             img_byte_arr = io.BytesIO()
-            if use_rembg and not has_transparency(img):
-                result = remove(img)
-                result.save(img_byte_arr, format='PNG')
-            else:
-                img.save(img_byte_arr, format='PNG')
+            
+            if use_rembg:
+                # 1. AI Cutout (if not already transparent)
+                if not has_transparency(img):
+                    img = remove(img)
+                
+                # 2. Auto-Crop Excess Transparent Pixels
+                alpha = img.getchannel("A")
+                bbox = alpha.getbbox()
+                if bbox:
+                    img = img.crop(bbox)
+                    
+            img.save(img_byte_arr, format='PNG')
             return {"filename": filename, "data": img_byte_arr.getvalue(), "success": True}
     except Exception:
         pass
@@ -328,6 +337,9 @@ with st.expander("📋 Quick Guide: Best Practices for Excel Headers", expanded=
     """)
 
 if uploaded_file and gsheet_url:
+    # 1. Dynamically capture the uploaded file's exact name
+    base_file_name = os.path.splitext(uploaded_file.name)[0]
+    
     with st.spinner("Buddy is processing your data..."):
         product_df = fetch_google_sheet_data(gsheet_url)
         
@@ -356,10 +368,12 @@ if uploaded_file and gsheet_url:
                     selected_tab = st.selectbox("Select Hub Tab to Preview:", sorted(tabs.keys()))
                     st.dataframe(pd.DataFrame(tabs[selected_tab]), use_container_width=True)
                     output_excel = excel_export(tabs, all_pids_tab)
+                    
                     st.download_button(
                         "📥 Download Master Excel",
                         data=output_excel,
-                        file_name="Campaign_Master_Output.xlsx",
+                        # 2. Dynamic Output Excel Naming
+                        file_name=f"Formatted_{base_file_name}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         type="primary"
                     )
@@ -373,12 +387,28 @@ if uploaded_file and gsheet_url:
                         st.markdown("### Standard Download")
                         if st.button("⚡ Start Standard Download", use_container_width=True):
                             zip_data = batch_download_images(all_img_rows, use_rembg=False)
-                            st.download_button("📥 Save Standard ZIP", data=zip_data, file_name="Standard_Images.zip", mime="application/zip", type="primary")
+                            
+                            st.download_button(
+                                "📥 Save Standard ZIP", 
+                                data=zip_data, 
+                                # 3. Dynamic Standard ZIP Naming
+                                file_name=f"{base_file_name}_Images.zip", 
+                                mime="application/zip", 
+                                type="primary"
+                            )
 
                     with col2:
                         st.markdown("### AI Background Removal")
                         if st.button("🤖 Start Rembg Download", use_container_width=True):
                             zip_data = batch_download_images(all_img_rows, use_rembg=True)
-                            st.download_button("📥 Save Rembg ZIP", data=zip_data, file_name="Rembg_Images.zip", mime="application/zip", type="primary")
+                            
+                            st.download_button(
+                                "📥 Save Rembg ZIP", 
+                                data=zip_data, 
+                                # 4. Dynamic Rembg ZIP Naming
+                                file_name=f"{base_file_name}_Rembg_Images.zip", 
+                                mime="application/zip", 
+                                type="primary"
+                            )
 else:
     st.info("👈 Please paste your Google Sheet Link and upload your Campaign Excel file in the sidebar to begin.")
