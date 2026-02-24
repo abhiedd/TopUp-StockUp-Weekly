@@ -11,6 +11,7 @@ import zipfile
 import io
 import re
 import concurrent.futures
+import streamlit.components.v1 as components
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Milkbasket Campaign Auto-Processor", layout="wide")
@@ -52,6 +53,20 @@ def make_img_map(product_df):
             src_map[pid] = img_src
     return img_map, src_map
 
+def clean_excel_name(name):
+    name = str(name)
+    name = name.replace('*', 'x')
+    name = re.sub(r'[\[\]\:\/\\\?]', '', name)
+    
+    if len(name) > 28:
+        subs = {"Background": "BG", "Essentials": "Ess", "Category": "Cat", "Discount": "Disc"}
+        for full, abbr in subs.items():
+            name = re.sub(rf'(?i)\b{full}\b', abbr, name)
+            
+    name = name[:31].strip()
+    name = re.sub(r'[\s\|\&\-]+$', '', name).strip()
+    return name
+
 def clean_tab_name(campaign, asset):
     c = str(campaign).strip()
     a = str(asset).strip()
@@ -63,10 +78,7 @@ def clean_tab_name(campaign, asset):
     elif c:     name = c
     else:       name = "Unnamed Asset"
         
-    return re.sub(r'[\[\]\*:/\\?]', '', name).strip()[:31]
-
-def clean_sheet_name(name):
-    return re.sub(r'[\[\]\*:/\\?]', '', str(name)).strip()[:31]
+    return clean_excel_name(name)
 
 # --- SMART MESSY DATA AUTO-CLEANER ---
 def auto_clean_messy_tab(df, hub, img_map):
@@ -74,7 +86,6 @@ def auto_clean_messy_tab(df, hub, img_map):
     current_campaign = "Unknown Campaign"
     current_asset = "Unknown Asset"
     
-    # Safely Expanded Promo Dictionary
     promo_keywords = ["upto", "% off", "buy", "%", "free", "flat ", "discount", "cashback", "bogo", "save ₹", "save rs"]
     headers = [str(c).strip().lower() for c in df.columns]
     
@@ -94,11 +105,9 @@ def auto_clean_messy_tab(df, hub, img_map):
             if val_str.endswith('.0'): val_str = val_str[:-2] 
             col_header = headers[i]
             
-            # 1. IGNORE REMARKS
             if "remark" in col_header:
                 continue
                 
-            # 2. Database Validation & Header Checking for PIDs
             if re.match(r'^\d{3,8}$', val_str) and val_str in img_map:
                 if "2" in col_header and ("pid" in col_header or "mb" in col_header):
                     pid2 = val_str
@@ -110,7 +119,6 @@ def auto_clean_messy_tab(df, hub, img_map):
                 found_first_pid = True
                 
             elif not found_first_pid:
-                # 3. Contextual Metadata Extraction
                 if "campaign" in col_header:
                     current_campaign = val_str
                 elif "asset" in col_header:
@@ -122,11 +130,9 @@ def auto_clean_messy_tab(df, hub, img_map):
                 else:
                     unmapped_vals.append(val_str)
                     
-        # Capture inputs if PID1 exists
         if not pid1 and not pid2:
             continue
             
-        # 4. Fallback Extraction (Using Safe Promo Dictionary)
         for val in unmapped_vals:
             v_low = val.lower()
             if not call_out and any(k in v_low for k in promo_keywords):
@@ -160,7 +166,7 @@ def excel_export(tabs, all_pids_tab):
     bold_font = Font(bold=True)
 
     for tname, rows in tabs.items():
-        ws = wb.create_sheet(title=clean_sheet_name(tname))
+        ws = wb.create_sheet(title=clean_excel_name(tname))
         
         has_callout = any(r.get("Callout") for r in rows)
         cols = ["Hub", "Title", "PID1", "PID2", "Img1", "Img2", "AmzId1", "AmzId2"]
@@ -254,6 +260,26 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**2. Campaign Data (Excel)**")
     uploaded_file = st.file_uploader("Upload Messy Campaign Excel", type=["xlsx"])
+    
+    # --- 🐾 APP COMPANION (LOTTIE ANIMATION) ---
+    st.markdown("---")
+    st.markdown("<div style='text-align: center; color: #888; font-size: 14px;'>Workspace Buddy</div>", unsafe_allow_html=True)
+    components.html(
+        """
+        <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+        <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+            <lottie-player 
+                src="https://lottie.host/804d9c7c-4ab4-406a-93c0-3f00cc5538e1/4O3i1TtzbN.json" 
+                background="transparent" 
+                speed="1" 
+                style="width: 160px; height: 160px;" 
+                loop 
+                autoplay>
+            </lottie-player>
+        </div>
+        """,
+        height=180
+    )
 
 st.title("🚀 Campaign Asset Auto-Processor")
 st.markdown("Automates data cleanup, Excel generation, AWS link creation, and bulk image processing.")
