@@ -261,37 +261,92 @@ with st.sidebar:
     st.markdown("**2. Campaign Data (Excel)**")
     uploaded_file = st.file_uploader("Upload Messy Campaign Excel", type=["xlsx"])
     
-    # --- 🐾 APP COMPANION (HARDCODED SVG & CSS ANIMATION) ---
+    # --- 🐾 APP COMPANION (GINGER NERD CAT - PURE SVG) ---
     st.markdown("---")
     st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 10px;'>Workspace Buddy</div>", unsafe_allow_html=True)
     st.markdown(
         """
         <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-            <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <svg width="160" height="160" viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#FFF3B0" stop-opacity="0.4"/>
+                        <stop offset="100%" stop-color="#FFF3B0" stop-opacity="0"/>
+                    </radialGradient>
+                </defs>
                 <style>
-                    .paw-l { animation: tap 0.3s ease-in-out infinite alternate; transform-origin: 50% 80%; }
-                    .paw-r { animation: tap 0.4s ease-in-out infinite alternate-reverse; transform-origin: 50% 80%; }
-                    .eye { animation: blink 4s infinite; transform-origin: center; }
-                    .tail { animation: wag 2s ease-in-out infinite alternate; transform-origin: bottom center; }
-                    @keyframes tap { 0% { transform: translateY(0px); } 100% { transform: translateY(6px); } }
+                    .paw-l { animation: type-l 0.2s infinite alternate; }
+                    .paw-r { animation: type-r 0.25s infinite alternate-reverse; }
+                    .tail { animation: wag 2s ease-in-out infinite alternate; transform-origin: 145px 130px; }
+                    #eye-l { animation: blink 4s infinite; transform-origin: 90px 71px; }
+                    #eye-r { animation: blink 4s infinite; transform-origin: 138px 71px; }
+                    @keyframes type-l { 0% { transform: translateY(0px); } 100% { transform: translateY(-4px); } }
+                    @keyframes type-r { 0% { transform: translateY(0px); } 100% { transform: translateY(-4px); } }
+                    @keyframes wag { 0% { transform: rotate(-5deg); } 100% { transform: rotate(15deg); } }
                     @keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
-                    @keyframes wag { 0% { transform: rotate(-8deg); } 100% { transform: rotate(8deg); } }
                 </style>
-                <path class="tail" d="M90 90 Q 110 70 100 50" fill="none" stroke="#34495e" stroke-width="8" stroke-linecap="round"/>
-                <rect x="35" y="60" width="50" height="40" rx="15" fill="#2c3e50"/>
-                <rect x="20" y="85" width="80" height="8" rx="3" fill="#95a5a6"/>
-                <path d="M 30 85 L 40 55 L 80 55 L 90 85 Z" fill="#bdc3c7"/>
-                <path d="M 35 80 L 42 60 L 78 60 L 85 80 Z" fill="#ecf0f1" opacity="0.9"/>
-                <circle cx="60" cy="50" r="22" fill="#2c3e50"/>
-                <polygon points="45,35 35,15 55,32" fill="#2c3e50"/>
-                <polygon points="75,35 85,15 65,32" fill="#2c3e50"/>
-                <polygon points="44,32 38,20 51,30" fill="#e74c3c" opacity="0.5"/>
-                <polygon points="76,32 82,20 69,30" fill="#e74c3c" opacity="0.5"/>
-                <circle class="eye" cx="52" cy="48" r="3" fill="#ecf0f1"/>
-                <circle class="eye" cx="68" cy="48" r="3" fill="#ecf0f1"/>
-                <polygon points="58,54 62,54 60,57" fill="#e74c3c" opacity="0.8"/>
-                <rect class="paw-l" x="42" y="75" width="10" height="15" rx="5" fill="#34495e"/>
-                <rect class="paw-r" x="68" y="75" width="10" height="15" rx="5" fill="#34495e"/>
+
+                <g stroke="#34495e" stroke-width="2" stroke-linejoin="round">
+                    <polygon points="25,40 85,55 70,130 10,115" fill="#57606f" />
+                    <polygon points="28,44 82,58 68,126 14,112" fill="#ced6e0" stroke="none" />
+                </g>
+
+                <polygon points="28,44 140,40 160,160 14,112" fill="url(#glow)" style="mix-blend-mode: overlay;" />
+
+                <g stroke="#593618" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    
+                    <g class="tail">
+                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#593618" stroke-width="24"/>
+                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#FFAC4A" stroke-width="18"/>
+                        <path d="M 145 130 Q 185 140 185 90 Q 185 60 160 60 Q 145 60 150 80" fill="none" stroke="#D97A29" stroke-width="18" stroke-dasharray="10 15"/>
+                    </g>
+                    
+                    <path d="M 85 160 C 85 100 165 100 165 160 Z" fill="#FFAC4A" />
+                    <path d="M 110 160 C 110 125 155 125 160 160 Z" fill="#FFEDC2" stroke="none" />
+                    <path d="M 145 110 Q 155 115 163 112" stroke="#D97A29" stroke-width="3" fill="none"/>
+                    <path d="M 150 125 Q 158 130 164 125" stroke="#D97A29" stroke-width="3" fill="none"/>
+
+                    <polygon points="90,45 80,15 110,38" fill="#FFAC4A" />
+                    <polygon points="138,45 148,15 118,38" fill="#FFAC4A" />
+                    <polygon points="90,42 83,23 105,37" fill="#F19A9B" stroke="none" />
+                    <polygon points="138,42 145,23 123,37" fill="#F19A9B" stroke="none" />
+
+                    <ellipse cx="114" cy="75" rx="42" ry="34" fill="#FFAC4A" />
+                    
+                    <path d="M 114 42 L 114 52 M 104 46 L 109 56 M 124 46 L 119 56" stroke="#D97A29" stroke-width="3" fill="none"/>
+                    
+                    <ellipse cx="114" cy="88" rx="18" ry="12" fill="#FFEDC2" stroke="none" />
+                    <path d="M 114 83 L 110 87 A 4 4 0 0 0 118 87 Z" fill="#E88383" stroke-linejoin="round"/>
+                    <path d="M 114 87 Q 109 92 105 89 M 114 87 Q 119 92 123 89" stroke-width="1.5" fill="none"/>
+                    
+                    <ellipse cx="82" cy="85" rx="7" ry="4" fill="#F19A9B" stroke="none" opacity="0.8" />
+                    <ellipse cx="146" cy="85" rx="7" ry="4" fill="#F19A9B" stroke="none" opacity="0.8" />
+                    
+                    <path d="M 78 80 L 60 75 M 78 86 L 58 86 M 78 92 L 62 97" stroke-width="1.5" fill="none"/>
+                    <path d="M 150 80 L 168 75 M 150 86 L 170 86 M 150 92 L 166 97" stroke-width="1.5" fill="none"/>
+                </g>
+
+                <circle id="eye-l" cx="90" cy="71" r="4.5" fill="#2C3A47" />
+                <circle id="eye-r" cx="138" cy="71" r="4.5" fill="#2C3A47" />
+                
+                <g stroke="#2C3A47" stroke-width="4.5" fill="rgba(255,255,255,0.15)">
+                    <rect x="70" y="55" width="40" height="30" rx="8" />
+                    <rect x="118" y="55" width="40" height="30" rx="8" />
+                    <line x1="110" y1="70" x2="118" y2="70" />
+                    <line x1="70" y1="65" x2="55" y2="60" stroke-linecap="round"/>
+                    <line x1="158" y1="65" x2="173" y2="60" stroke-linecap="round"/>
+                </g>
+
+                <g stroke="#34495e" stroke-width="2" stroke-linejoin="round">
+                    <polygon points="10,115 70,130 130,155 10,145" fill="#a4b0be" />
+                    <polygon points="10,145 130,155 130,162 10,152" fill="#747d8c" />
+                    <path d="M 22 124 L 70 134 M 18 132 L 80 143 M 15 140 L 95 152" stroke="#57606f" stroke-width="1.5" opacity="0.6"/>
+                </g>
+
+                <g stroke="#593618" stroke-width="2.5">
+                    <ellipse class="paw-l" cx="70" cy="138" rx="16" ry="11" fill="#FFAC4A" />
+                    <ellipse class="paw-r" cx="105" cy="146" rx="16" ry="11" fill="#FFAC4A" />
+                </g>
             </svg>
         </div>
         """, unsafe_allow_html=True
