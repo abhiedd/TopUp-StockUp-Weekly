@@ -261,13 +261,38 @@ with st.sidebar:
     st.markdown("**2. Campaign Data (Excel)**")
     uploaded_file = st.file_uploader("Upload Messy Campaign Excel", type=["xlsx"])
     
-    # --- 🐾 APP COMPANION (GIF ANIMATION) ---
+    # --- 🐾 APP COMPANION (HARDCODED SVG & CSS ANIMATION) ---
     st.markdown("---")
     st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 10px;'>Workspace Buddy</div>", unsafe_allow_html=True)
     st.markdown(
         """
-        <div style="display: flex; justify-content: center;">
-            <img src="https://media.tenor.com/13BvM9v2yH8AAAAi/cat-typing.gif" width="120" style="border-radius: 10px;">
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                <style>
+                    .paw-l { animation: tap 0.3s ease-in-out infinite alternate; transform-origin: 50% 80%; }
+                    .paw-r { animation: tap 0.4s ease-in-out infinite alternate-reverse; transform-origin: 50% 80%; }
+                    .eye { animation: blink 4s infinite; transform-origin: center; }
+                    .tail { animation: wag 2s ease-in-out infinite alternate; transform-origin: bottom center; }
+                    @keyframes tap { 0% { transform: translateY(0px); } 100% { transform: translateY(6px); } }
+                    @keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+                    @keyframes wag { 0% { transform: rotate(-8deg); } 100% { transform: rotate(8deg); } }
+                </style>
+                <path class="tail" d="M90 90 Q 110 70 100 50" fill="none" stroke="#34495e" stroke-width="8" stroke-linecap="round"/>
+                <rect x="35" y="60" width="50" height="40" rx="15" fill="#2c3e50"/>
+                <rect x="20" y="85" width="80" height="8" rx="3" fill="#95a5a6"/>
+                <path d="M 30 85 L 40 55 L 80 55 L 90 85 Z" fill="#bdc3c7"/>
+                <path d="M 35 80 L 42 60 L 78 60 L 85 80 Z" fill="#ecf0f1" opacity="0.9"/>
+                <circle cx="60" cy="50" r="22" fill="#2c3e50"/>
+                <polygon points="45,35 35,15 55,32" fill="#2c3e50"/>
+                <polygon points="75,35 85,15 65,32" fill="#2c3e50"/>
+                <polygon points="44,32 38,20 51,30" fill="#e74c3c" opacity="0.5"/>
+                <polygon points="76,32 82,20 69,30" fill="#e74c3c" opacity="0.5"/>
+                <circle class="eye" cx="52" cy="48" r="3" fill="#ecf0f1"/>
+                <circle class="eye" cx="68" cy="48" r="3" fill="#ecf0f1"/>
+                <polygon points="58,54 62,54 60,57" fill="#e74c3c" opacity="0.8"/>
+                <rect class="paw-l" x="42" y="75" width="10" height="15" rx="5" fill="#34495e"/>
+                <rect class="paw-r" x="68" y="75" width="10" height="15" rx="5" fill="#34495e"/>
+            </svg>
         </div>
         """, unsafe_allow_html=True
     )
