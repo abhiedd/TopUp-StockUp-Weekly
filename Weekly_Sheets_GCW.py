@@ -11,7 +11,7 @@ import zipfile
 import io
 import re
 import concurrent.futures
-import streamlit.components.v1 as components
+import streamlit.components.v1 as components # Import required for the fix
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Milkbasket Campaign Auto-Processor", layout="wide")
@@ -46,7 +46,7 @@ def make_amz_link(pid):
 def make_img_map(product_df):
     img_map, src_map = {}, {}
     for _, row in product_df.iterrows():
-        pid = fix_pid(row.get('PID', row.get('MB_id', ''))) 
+        pid = fix_pid(row.get('PID', row.get('MB_id', '')))
         img_src = str(row.get('image_src', '')).strip()
         if pid and img_src and pid.lower() != 'nan' and img_src.lower() != 'nan':
             img_map[pid] = f"https://file.milkbasket.com/products/{img_src}"
@@ -57,13 +57,13 @@ def clean_excel_name(name):
     name = str(name)
     name = name.replace('*', 'x')
     name = re.sub(r'[\[\]\:\/\\\?]', '', name)
-    
+
     # V13 Standard Abbreviations
     if len(name) > 28:
         subs = {"Background": "BG", "Essentials": "Ess", "Category": "Cat", "Discount": "Disc"}
         for full, abbr in subs.items():
             name = re.sub(rf'(?i)\b{full}\b', abbr, name)
-            
+
     name = name[:31].strip()
     name = re.sub(r'[\s\|\&\-]+$', '', name).strip()
     return name
@@ -73,12 +73,12 @@ def clean_tab_name(campaign, asset):
     a = str(asset).strip()
     if c.lower() in ["", "nan", "unknown campaign"]: c = ""
     if a.lower() in ["", "nan", "unknown asset"]: a = ""
-    
+
     if c and a: name = f"{c} | {a}"
     elif a:     name = a
     elif c:     name = c
     else:       name = "Unnamed Asset"
-        
+
     return clean_excel_name(name)
 
 # --- SMART MESSY DATA AUTO-CLEANER ---
@@ -86,29 +86,29 @@ def auto_clean_messy_tab(df, hub, img_map):
     cleaned_rows = []
     current_campaign = "Unknown Campaign"
     current_asset = "Unknown Asset"
-    
+
     promo_keywords = ["upto", "% off", "buy", "%", "free", "flat ", "discount", "cashback", "bogo", "save ₹", "save rs"]
     headers = [str(c).strip().lower() for c in df.columns]
-    
+
     for _, row in df.iterrows():
         pid1, pid2 = "", ""
         grid_detail = ""
         call_out = ""
         unmapped_vals = []
         found_first_pid = False
-        
+
         for i, col_name in enumerate(df.columns):
             val = row.iloc[i]
             if pd.isna(val) or str(val).strip() == "" or str(val).strip().lower() == "nan":
                 continue
-                
+
             val_str = str(val).strip()
-            if val_str.endswith('.0'): val_str = val_str[:-2] 
+            if val_str.endswith('.0'): val_str = val_str[:-2]
             col_header = headers[i]
-            
+
             if "remark" in col_header:
                 continue
-                
+
             if re.match(r'^\d{3,8}$', val_str) and val_str in img_map:
                 if "2" in col_header and ("pid" in col_header or "mb" in col_header):
                     pid2 = val_str
@@ -118,7 +118,7 @@ def auto_clean_messy_tab(df, hub, img_map):
                     if not pid1: pid1 = val_str
                     elif not pid2: pid2 = val_str
                 found_first_pid = True
-                
+
             elif not found_first_pid:
                 if "campaign" in col_header:
                     current_campaign = val_str
@@ -130,20 +130,20 @@ def auto_clean_messy_tab(df, hub, img_map):
                     call_out = val_str
                 else:
                     unmapped_vals.append(val_str)
-                    
+
         if not pid1 and not pid2:
             continue
-            
+
         for val in unmapped_vals:
             v_low = val.lower()
             if not call_out and any(k in v_low for k in promo_keywords):
                 call_out = val
             elif not grid_detail and not re.match(r'(?i)^(campaign|asset|grid|call out|remarks|pid|name|mb)', val):
                 grid_detail = val
-                
+
         if current_asset.lower() in ["atc", "atc background"]:
             continue
-            
+
         cleaned_rows.append({
             "tab": clean_tab_name(current_campaign, current_asset),
             "Hub": hub,
@@ -157,7 +157,7 @@ def auto_clean_messy_tab(df, hub, img_map):
             "Callout": call_out,
             "Framename": f"{hub}-{grid_detail}" if grid_detail else f"{hub}"
         })
-        
+
     return cleaned_rows
 
 def excel_export(tabs, all_pids_tab):
@@ -168,12 +168,12 @@ def excel_export(tabs, all_pids_tab):
 
     for tname, rows in tabs.items():
         ws = wb.create_sheet(title=clean_excel_name(tname))
-        
+
         has_callout = any(r.get("Callout") for r in rows)
         cols = ["Hub", "Title", "PID1", "PID2", "Img1", "Img2", "AmzId1", "AmzId2"]
         if has_callout: cols.append("Callout")
         cols.append("Framename")
-        
+
         df = pd.DataFrame(rows)[cols]
         for r_idx, row in enumerate(dataframe_to_rows(df, index=False, header=True), 1):
             ws.append(row)
@@ -182,12 +182,12 @@ def excel_export(tabs, all_pids_tab):
                     cell = ws.cell(row=r_idx, column=c_idx)
                     cell.fill = yellow_fill
                     cell.font = bold_font
-                    
+
     ws2 = wb.create_sheet("All_PIDs")
     pid_df = pd.DataFrame(all_pids_tab)
     for r_idx, row in enumerate(dataframe_to_rows(pid_df, index=False, header=True), 1):
         ws2.append(row)
-        
+
     if "Sheet" in wb.sheetnames: del wb["Sheet"]
     wb.save(output)
     output.seek(0)
@@ -225,9 +225,9 @@ def batch_download_images(image_list, use_rembg=False):
     status_text = st.empty()
     success_count = 0
     total = len(image_list)
-    
-    workers = 1 if use_rembg else 10 
-    
+
+    workers = 1 if use_rembg else 10
+
     with zipfile.ZipFile(zip_buffer, "w") as zipf:
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {executor.submit(process_single_image, item, use_rembg): item for item in image_list}
@@ -240,7 +240,7 @@ def batch_download_images(image_list, use_rembg=False):
                 completed += 1
                 progress_bar.progress(completed / total)
                 status_text.text(f"Processed {completed}/{total} images... (Using {workers} threads)")
-                
+
     zip_buffer.seek(0)
     status_text.success(f"✅ Packaging complete! Successfully processed {success_count} out of {total} images.")
     return zip_buffer
@@ -254,23 +254,24 @@ with st.sidebar:
     st.header("⚙️ Configuration")
     st.markdown("**1. Product Database (Google Sheet)**")
     gsheet_url = st.text_input(
-        "Paste Google Sheet Link:", 
+        "Paste Google Sheet Link:",
         value="https://docs.google.com/spreadsheets/d/1yQJfr9UhSpfXBdUDksj_zDdhevLZ9OXD3pktJOlRtwg/edit",
         help="Make sure the sheet is accessible (Anyone with the link can view)."
     )
     st.markdown("---")
     st.markdown("**2. Campaign Data (Excel)**")
     uploaded_file = st.file_uploader("Upload Messy Campaign Excel", type=["xlsx"])
-    
-    # --- 🐾 APP COMPANION (GINGER NERD CAT - HTML COMPONENT) ---
+
+    # --- 🐾 APP COMPANION (CLEAN GINGER NERD CAT) ---
     st.markdown("---")
     st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 5px;'>Workspace Buddy</div>", unsafe_allow_html=True)
-    
-    # Using components.html completely bypasses Streamlit's Markdown parser
+
+    # We use components.html to create a protected sandbox for the SVG.
+    # This prevents Streamlit's markdown parser from breaking the code.
     components.html(
         """
-        <div style="display: flex; justify-content: center; height: 100%; overflow: hidden;">
-            <svg width="180" height="150" viewBox="20 30 160 140" xmlns="http://www.w3.org/2000/svg">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100%; overflow: hidden;">
+            <svg width="160" height="160" viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg">
                 <style>
                     .paw-l { animation: type-l 0.2s infinite alternate; transform-origin: center; }
                     .paw-r { animation: type-r 0.25s infinite alternate-reverse; transform-origin: center; }
@@ -320,7 +321,6 @@ with st.sidebar:
                     <polygon points="30,40 90,55 75,130 15,115" fill="#57606f" />
                     <polygon points="33,44 87,58 73,126 19,112" fill="#ced6e0" stroke="none" />
                 </g>
-                <polygon points="33,44 145,40 165,160 19,112" fill="#FFF3B0" opacity="0.15" stroke="none"/>
                 <g stroke="#3e2723" stroke-width="2.5">
                     <ellipse class="paw-l" cx="75" cy="138" rx="16" ry="11" fill="#f0a552" />
                     <ellipse class="paw-r" cx="110" cy="146" rx="16" ry="11" fill="#f0a552" />
@@ -331,6 +331,7 @@ with st.sidebar:
         height=170
     )
 
+
 st.title("🚀 Campaign Asset Auto-Processor")
 st.markdown("Automates data cleanup, Excel generation, AWS link creation, and bulk image processing.")
 
@@ -338,26 +339,26 @@ st.markdown("Automates data cleanup, Excel generation, AWS link creation, and bu
 with st.expander("📋 Quick Guide: Best Practices for Excel Headers", expanded=False):
     st.info("""
     **To guarantee 100% accurate data extraction, use these header names in Row 1 of your Excel file:**
-    
+
     * 🏷️ **`Campaign`** - Extracts the main campaign name.
     * 🎨 **`Asset`** - Groups items into tabs (e.g., *Banner, Medium Cards*).
     * 📝 **`Grid`** or **`Title`** - Maps the product category or grid detail.
     * 🔑 **`PID 1`** and **`PID 2`** - Explicitly tells the engine which product is which.
     * 📢 **`Callout`** or **`Offer`** - Extracts promotional text (e.g., *Upto 50% Off*).
     * 🚫 **`Remarks`** - Add this header to *any* column you want the engine to completely ignore.
-    
+
     *(Note: Even if your sheet is messy or missing these exact headers, the engine will still try to intelligently auto-map the data!)*
     """)
 
 if uploaded_file and gsheet_url:
     with st.spinner("Fetching Product Database from Google Sheets..."):
         product_df = fetch_google_sheet_data(gsheet_url)
-        
+
     if product_df is not None:
         img_map, src_map = make_img_map(product_df)
         all_rows = []
         xls = pd.ExcelFile(uploaded_file)
-        
+
         for tab in xls.sheet_names:
             df = pd.read_excel(xls, sheet_name=tab, header=0)
             rows = auto_clean_messy_tab(df, tab, img_map)
@@ -367,11 +368,11 @@ if uploaded_file and gsheet_url:
             tabs = {}
             for r in all_rows:
                 tabs.setdefault(r["tab"], []).append({k: v for k, v in r.items() if k != "tab"})
-            
+
             pid_set = {r[col] for r in all_rows for col in ["PID1", "PID2"] if r[col]}
             all_pids = sorted(pid_set, key=lambda x: (0, int(x)) if str(x).isdigit() else (1, str(x)))
             all_pids_tab = [{"PID": pid, "Img Link": img_map.get(pid, ""), "AmzID": make_amz_link(pid)} for pid in all_pids]
-            
+
             tab1, tab2 = st.tabs(["📊 Excel & Data", "🖼️ Image Download Tools"])
             with tab1:
                 st.subheader("Data Preview & Export")
