@@ -53,37 +53,18 @@ def make_img_map(product_df):
     return img_map, src_map
 
 def clean_excel_name(name):
-    """Formats strings to strictly obey Microsoft Excel's sheet naming rules."""
     name = str(name)
-    
-    # 1. Replace asterisks intelligently (e.g., "3*2" becomes "3x2")
     name = name.replace('*', 'x')
-    
-    # 2. Remove other strict Excel forbidden characters
     name = re.sub(r'[\[\]\:\/\\\?]', '', name)
     
-    # 3. Aggressive Abbreviations to save character space
+    # V13 Standard Abbreviations
     if len(name) > 28:
-        subs = {
-            "Background": "BG",
-            "Essentials": "Ess",
-            "Everyday": "ED",
-            "Value": "Val",
-            "Boosters": "Boost",
-            "Medium": "Med",
-            "Category": "Cat",
-            "Discount": "Disc",
-            "with": "w/"
-        }
+        subs = {"Background": "BG", "Essentials": "Ess", "Category": "Cat", "Discount": "Disc"}
         for full, abbr in subs.items():
             name = re.sub(rf'(?i)\b{full}\b', abbr, name)
             
-    # 4. Hard truncate to 31 characters (Excel's absolute limit)
     name = name[:31].strip()
-    
-    # 5. Clean up ugly trailing orphaned connectors caused by the truncation
-    name = re.sub(r'[\s\|\&\-\w/]+$', '', name).strip()
-    
+    name = re.sub(r'[\s\|\&\-]+$', '', name).strip()
     return name
 
 def clean_tab_name(campaign, asset):
