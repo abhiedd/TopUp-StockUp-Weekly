@@ -20,7 +20,6 @@ AWS_BASE_URL = "https://design-figma.s3.ap-south-1.amazonaws.com/"
 # --- CACHED DATA FETCHING ---
 @st.cache_data(show_spinner=False)
 def fetch_google_sheet_data(url):
-    """Extracts the ID from a Google Sheet URL and fetches it as a CSV."""
     match = re.search(r'/d/([a-zA-Z0-9-_]+)', url)
     if not match: return None
     sheet_id = match.group(1)
@@ -44,7 +43,6 @@ def make_amz_link(pid):
     return f"{AWS_BASE_URL}{pid}.png"
 
 def make_img_map(product_df):
-    """Creates a dictionary map of Valid PIDs to Image URLs."""
     img_map, src_map = {}, {}
     for _, row in product_df.iterrows():
         pid = fix_pid(row.get('PID', row.get('MB_id', ''))) 
@@ -55,114 +53,104 @@ def make_img_map(product_df):
     return img_map, src_map
 
 def clean_tab_name(campaign, asset):
-    return f"{campaign.strip()} | {asset.strip()}"
+    c = str(campaign).strip()
+    a = str(asset).strip()
+    if c.lower() in ["", "nan", "unknown campaign"]: c = ""
+    if a.lower() in ["", "nan", "unknown asset"]: a = ""
+    
+    if c and a: name = f"{c} | {a}"
+    elif a:     name = a
+    elif c:     name = c
+    else:       name = "Unnamed Asset"
+        
+    return re.sub(r'[\[\]\*:/\\?]', '', name).strip()[:31]
 
 def clean_sheet_name(name):
-    # Excel sheets have a 31 character limit and restrict certain characters
     return re.sub(r'[\[\]\*:/\\?]', '', str(name)).strip()[:31]
 
 # --- SMART MESSY DATA AUTO-CLEANER ---
 def auto_clean_messy_tab(df, hub, img_map):
-    """Parses messy sheets using Database Validation and Header Context."""
     cleaned_rows = []
     current_campaign = "Unknown Campaign"
     current_asset = "Unknown Asset"
-    asset_keywords = ['atc', 'hero', 'cards', 'medium', 'bg', 'banner', '3*2', 'store', 'slider']
     
-    # Grab all headers and make them lowercase for context checking
+    # Safely Expanded Promo Dictionary
+    promo_keywords = ["upto", "% off", "buy", "%", "free", "flat ", "discount", "cashback", "bogo", "save ₹", "save rs"]
     headers = [str(c).strip().lower() for c in df.columns]
     
     for _, row in df.iterrows():
         pid1, pid2 = "", ""
-        pre_pid = []
+        grid_detail = ""
+        call_out = ""
+        unmapped_vals = []
         found_first_pid = False
         
-        # Iterate through the row using the exact column index (i)
         for i, col_name in enumerate(df.columns):
             val = row.iloc[i]
-            
-            # Skip empty cells
             if pd.isna(val) or str(val).strip() == "" or str(val).strip().lower() == "nan":
                 continue
                 
             val_str = str(val).strip()
-            if val_str.endswith('.0'): val_str = val_str[:-2] # Clean float parsing
+            if val_str.endswith('.0'): val_str = val_str[:-2] 
+            col_header = headers[i]
             
-            # 1. Database Validation & Header Checking
-            # It must look like a number AND exist in our Master PID Database
-            if re.match(r'^\d{3,8}$', val_str) and val_str in img_map:
-                col_header = headers[i]
+            # 1. IGNORE REMARKS
+            if "remark" in col_header:
+                continue
                 
-                # Context Check: Look at the header to place it in the correct slot
+            # 2. Database Validation & Header Checking for PIDs
+            if re.match(r'^\d{3,8}$', val_str) and val_str in img_map:
                 if "2" in col_header and ("pid" in col_header or "mb" in col_header):
                     pid2 = val_str
                 elif "1" in col_header and ("pid" in col_header or "mb" in col_header):
                     pid1 = val_str
                 else:
-                    # Fallback: if header doesn't specify 1 or 2, fill them sequentially
-                    if not pid1:
-                        pid1 = val_str
-                    elif not pid2:
-                        pid2 = val_str
-                        
+                    if not pid1: pid1 = val_str
+                    elif not pid2: pid2 = val_str
                 found_first_pid = True
                 
             elif not found_first_pid:
-                # Keep collecting metadata until we hit the first valid PID
-                pre_pid.append(val_str)
-                
-        # If the row had no valid data at all, skip it entirely
-        if not pre_pid and not pid1 and not pid2:
+                # 3. Contextual Metadata Extraction
+                if "campaign" in col_header:
+                    current_campaign = val_str
+                elif "asset" in col_header:
+                    current_asset = val_str
+                elif "grid" in col_header or "title" in col_header or "item" in col_header:
+                    grid_detail = val_str
+                elif "call" in col_header or "offer" in col_header:
+                    call_out = val_str
+                else:
+                    unmapped_vals.append(val_str)
+                    
+        # Capture inputs if PID1 exists
+        if not pid1 and not pid2:
             continue
             
-        # 2. Extract Call Out and clean Metadata
-        call_out = ""
-        new_pre_pid = []
-        for val in pre_pid:
+        # 4. Fallback Extraction (Using Safe Promo Dictionary)
+        for val in unmapped_vals:
             v_low = val.lower()
-            if "upto" in v_low or "% off" in v_low or "buy" in v_low or "%" in v_low or "free" in v_low:
+            if not call_out and any(k in v_low for k in promo_keywords):
                 call_out = val
-            else:
-                new_pre_pid.append(val)
+            elif not grid_detail and not re.match(r'(?i)^(campaign|asset|grid|call out|remarks|pid|name|mb)', val):
+                grid_detail = val
                 
-        # Safeguard: Remove actual header words if they accidentally got caught in the sweep
-        new_pre_pid = [x for x in new_pre_pid if not re.match(r'(?i)^(campaign|asset|grid|call out|remarks|pid|name|mb)', x)]
+        if current_asset.lower() in ["atc", "atc background"]:
+            continue
+            
+        cleaned_rows.append({
+            "tab": clean_tab_name(current_campaign, current_asset),
+            "Hub": hub,
+            "Title": grid_detail,
+            "PID1": pid1,
+            "PID2": pid2,
+            "Img1": img_map.get(pid1, "") if pid1 else "",
+            "Img2": img_map.get(pid2, "") if pid2 else "",
+            "AmzId1": make_amz_link(pid1),
+            "AmzId2": make_amz_link(pid2),
+            "Callout": call_out,
+            "Framename": f"{hub}-{grid_detail}" if grid_detail else f"{hub}"
+        })
         
-        # 3. Inherit or Update Grid State
-        grid_detail = ""
-        if len(new_pre_pid) >= 3:
-            current_campaign = new_pre_pid[0]
-            current_asset = new_pre_pid[1]
-            grid_detail = new_pre_pid[2]
-        elif len(new_pre_pid) == 2:
-            if any(k in new_pre_pid[1].lower() for k in asset_keywords):
-                current_campaign = new_pre_pid[0]
-                current_asset = new_pre_pid[1]
-            else:
-                current_campaign = new_pre_pid[0]
-                grid_detail = new_pre_pid[1]
-        elif len(new_pre_pid) == 1:
-            grid_detail = new_pre_pid[0]
-            
-        # 4. Append Valid Product Rows
-        if pid1 or pid2:
-            if current_asset.lower() in ["atc", "atc background"]:
-                continue
-                
-            cleaned_rows.append({
-                "tab": clean_tab_name(current_campaign, current_asset),
-                "Hub": hub,
-                "Title": grid_detail,
-                "PID1": pid1,
-                "PID2": pid2,
-                "Img1": img_map.get(pid1, "") if pid1 else "",
-                "Img2": img_map.get(pid2, "") if pid2 else "",
-                "AmzId1": make_amz_link(pid1),
-                "AmzId2": make_amz_link(pid2),
-                "Callout": call_out,
-                "Framename": f"{hub}-{grid_detail}" if grid_detail else f"{hub}"
-            })
-            
     return cleaned_rows
 
 def excel_export(tabs, all_pids_tab):
@@ -174,7 +162,6 @@ def excel_export(tabs, all_pids_tab):
     for tname, rows in tabs.items():
         ws = wb.create_sheet(title=clean_sheet_name(tname))
         
-        # Dynamically append Callout column if any row in the tab has one
         has_callout = any(r.get("Callout") for r in rows)
         cols = ["Hub", "Title", "PID1", "PID2", "Img1", "Img2", "AmzId1", "AmzId2"]
         if has_callout: cols.append("Callout")
@@ -232,7 +219,6 @@ def batch_download_images(image_list, use_rembg=False):
     success_count = 0
     total = len(image_list)
     
-    # SMART SCALING for Free Tier environments (e.g. Streamlit Cloud)
     workers = 1 if use_rembg else 10 
     
     with zipfile.ZipFile(zip_buffer, "w") as zipf:
@@ -256,6 +242,7 @@ def batch_download_images(image_list, use_rembg=False):
 # ==========================================
 # 🎨 STREAMLIT UI LAYOUT
 # ==========================================
+
 with st.sidebar:
     st.header("⚙️ Configuration")
     st.markdown("**1. Product Database (Google Sheet)**")
@@ -271,6 +258,21 @@ with st.sidebar:
 st.title("🚀 Campaign Asset Auto-Processor")
 st.markdown("Automates data cleanup, Excel generation, AWS link creation, and bulk image processing.")
 
+# --- FANCY UI: HEADER REFERENCE GUIDE ---
+with st.expander("📋 Quick Guide: Best Practices for Excel Headers", expanded=False):
+    st.info("""
+    **To guarantee 100% accurate data extraction, use these header names in Row 1 of your Excel file:**
+    
+    * 🏷️ **`Campaign`** - Extracts the main campaign name.
+    * 🎨 **`Asset`** - Groups items into tabs (e.g., *Banner, Medium Cards*).
+    * 📝 **`Grid`** or **`Title`** - Maps the product category or grid detail.
+    * 🔑 **`PID 1`** and **`PID 2`** - Explicitly tells the engine which product is which.
+    * 📢 **`Callout`** or **`Offer`** - Extracts promotional text (e.g., *Upto 50% Off*).
+    * 🚫 **`Remarks`** - Add this header to *any* column you want the engine to completely ignore.
+    
+    *(Note: Even if your sheet is messy or missing these exact headers, the engine will still try to intelligently auto-map the data!)*
+    """)
+
 if uploaded_file and gsheet_url:
     with st.spinner("Fetching Product Database from Google Sheets..."):
         product_df = fetch_google_sheet_data(gsheet_url)
@@ -281,7 +283,6 @@ if uploaded_file and gsheet_url:
         xls = pd.ExcelFile(uploaded_file)
         
         for tab in xls.sheet_names:
-            # We read with header=0 so we capture the true header names for context mapping
             df = pd.read_excel(xls, sheet_name=tab, header=0)
             rows = auto_clean_messy_tab(df, tab, img_map)
             all_rows.extend(rows)
