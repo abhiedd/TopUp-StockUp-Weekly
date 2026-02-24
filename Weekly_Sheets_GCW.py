@@ -5,12 +5,11 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils.dataframe import dataframe_to_rows
 from PIL import Image
-from rembg import remove, new_session
+from rembg import remove
 import requests
 import zipfile
 import io
 import re
-import os
 import concurrent.futures
 import streamlit.components.v1 as components
 
@@ -19,12 +18,7 @@ st.set_page_config(page_title="Milkbasket Campaign Auto-Processor", layout="wide
 
 AWS_BASE_URL = "https://design-figma.s3.ap-south-1.amazonaws.com/"
 
-# --- CACHED RESOURCES & DATA ---
-@st.cache_resource(show_spinner=False)
-def get_bria_session():
-    """Loads the Bria RMbg 1.4 model once into memory for superior e-commerce cutouts."""
-    return new_session("briarmbg1.4")
-
+# --- CACHED DATA FETCHING ---
 @st.cache_data(show_spinner=False)
 def fetch_google_sheet_data(url):
     """Fetches the Master PID database from your Google Sheet."""
@@ -62,7 +56,7 @@ def make_img_map(product_df):
     return img_map, src_map
 
 def clean_excel_name(name):
-    """V13 Standard Abbreviation Logic for Excel Tab Names (31 char limit)."""
+    """Standard Abbreviation Logic for Excel Tab Names (31 char limit)."""
     name = str(name).replace('*', 'x')
     name = re.sub(r'[\[\]\:\/\\\?]', '', name)
     if len(name) > 28:
@@ -161,7 +155,7 @@ def has_transparency(img):
         if alpha and alpha.getextrema()[0] < 255: return True
     return False
 
-def process_single_image(item, use_rembg=False, rembg_session=None):
+def process_single_image(item, use_rembg=False):
     pid = item["PID"]
     img_url = item["Img Link"]
     filename = f"{pid}.png"
@@ -170,26 +164,17 @@ def process_single_image(item, use_rembg=False, rembg_session=None):
         if r.status_code == 200:
             img = Image.open(io.BytesIO(r.content)).convert("RGBA")
             img_byte_arr = io.BytesIO()
-            
-            if use_rembg:
-                # 1. Remove background if the image doesn't already have one
-                if not has_transparency(img):
-                    img = remove(img, session=rembg_session)
-                
-                # 2. Auto-Crop Excess Transparent Pixels
-                # Gets the bounding box by looking exclusively at the Alpha channel
-                alpha = img.getchannel("A")
-                bbox = alpha.getbbox()
-                if bbox:
-                    img = img.crop(bbox)
-
-            img.save(img_byte_arr, format='PNG')
+            if use_rembg and not has_transparency(img):
+                result = remove(img)
+                result.save(img_byte_arr, format='PNG')
+            else:
+                img.save(img_byte_arr, format='PNG')
             return {"filename": filename, "data": img_byte_arr.getvalue(), "success": True}
     except Exception:
         pass
     return {"filename": filename, "success": False}
 
-def batch_download_images(image_list, use_rembg=False, rembg_session=None):
+def batch_download_images(image_list, use_rembg=False):
     zip_buffer = io.BytesIO()
     progress_bar = st.progress(0)
     status_text = st.empty()
@@ -200,7 +185,7 @@ def batch_download_images(image_list, use_rembg=False, rembg_session=None):
     
     with zipfile.ZipFile(zip_buffer, "w") as zipf:
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(process_single_image, item, use_rembg, rembg_session): item for item in image_list}
+            futures = {executor.submit(process_single_image, item, use_rembg): item for item in image_list}
             completed = 0
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
@@ -343,9 +328,6 @@ with st.expander("📋 Quick Guide: Best Practices for Excel Headers", expanded=
     """)
 
 if uploaded_file and gsheet_url:
-    # Dynamically capture original file name
-    base_file_name = os.path.splitext(uploaded_file.name)[0]
-    
     with st.spinner("Buddy is processing your data..."):
         product_df = fetch_google_sheet_data(gsheet_url)
         
@@ -377,7 +359,7 @@ if uploaded_file and gsheet_url:
                     st.download_button(
                         "📥 Download Master Excel",
                         data=output_excel,
-                        file_name=f"Formatted_{base_file_name}.xlsx",
+                        file_name="Campaign_Master_Output.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         type="primary"
                     )
@@ -391,25 +373,12 @@ if uploaded_file and gsheet_url:
                         st.markdown("### Standard Download")
                         if st.button("⚡ Start Standard Download", use_container_width=True):
                             zip_data = batch_download_images(all_img_rows, use_rembg=False)
-                            st.download_button(
-                                "📥 Save Standard ZIP", 
-                                data=zip_data, 
-                                file_name=f"{base_file_name}_Images.zip", 
-                                mime="application/zip", 
-                                type="primary"
-                            )
+                            st.download_button("📥 Save Standard ZIP", data=zip_data, file_name="Standard_Images.zip", mime="application/zip", type="primary")
 
                     with col2:
                         st.markdown("### AI Background Removal")
                         if st.button("🤖 Start Rembg Download", use_container_width=True):
-                            bria_session = get_bria_session()
-                            zip_data = batch_download_images(all_img_rows, use_rembg=True, rembg_session=bria_session)
-                            st.download_button(
-                                "📥 Save Rembg ZIP", 
-                                data=zip_data, 
-                                file_name=f"{base_file_name}_Rembg_Images.zip", 
-                                mime="application/zip", 
-                                type="primary"
-                            )
+                            zip_data = batch_download_images(all_img_rows, use_rembg=True)
+                            st.download_button("📥 Save Rembg ZIP", data=zip_data, file_name="Rembg_Images.zip", mime="application/zip", type="primary")
 else:
     st.info("👈 Please paste your Google Sheet Link and upload your Campaign Excel file in the sidebar to begin.")
