@@ -11,7 +11,6 @@ import zipfile
 import io
 import re
 import concurrent.futures
-import streamlit.components.v1 as components
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Milkbasket Campaign Auto-Processor", layout="wide")
@@ -54,17 +53,37 @@ def make_img_map(product_df):
     return img_map, src_map
 
 def clean_excel_name(name):
+    """Formats strings to strictly obey Microsoft Excel's sheet naming rules."""
     name = str(name)
+    
+    # 1. Replace asterisks intelligently (e.g., "3*2" becomes "3x2")
     name = name.replace('*', 'x')
+    
+    # 2. Remove other strict Excel forbidden characters
     name = re.sub(r'[\[\]\:\/\\\?]', '', name)
     
+    # 3. Aggressive Abbreviations to save character space
     if len(name) > 28:
-        subs = {"Background": "BG", "Essentials": "Ess", "Category": "Cat", "Discount": "Disc"}
+        subs = {
+            "Background": "BG",
+            "Essentials": "Ess",
+            "Everyday": "ED",
+            "Value": "Val",
+            "Boosters": "Boost",
+            "Medium": "Med",
+            "Category": "Cat",
+            "Discount": "Disc",
+            "with": "w/"
+        }
         for full, abbr in subs.items():
             name = re.sub(rf'(?i)\b{full}\b', abbr, name)
             
+    # 4. Hard truncate to 31 characters (Excel's absolute limit)
     name = name[:31].strip()
-    name = re.sub(r'[\s\|\&\-]+$', '', name).strip()
+    
+    # 5. Clean up ugly trailing orphaned connectors caused by the truncation
+    name = re.sub(r'[\s\|\&\-\w/]+$', '', name).strip()
+    
     return name
 
 def clean_tab_name(campaign, asset):
@@ -261,24 +280,15 @@ with st.sidebar:
     st.markdown("**2. Campaign Data (Excel)**")
     uploaded_file = st.file_uploader("Upload Messy Campaign Excel", type=["xlsx"])
     
-    # --- 🐾 APP COMPANION (LOTTIE ANIMATION) ---
+    # --- 🐾 APP COMPANION (GIF ANIMATION) ---
     st.markdown("---")
-    st.markdown("<div style='text-align: center; color: #888; font-size: 14px;'>Workspace Buddy</div>", unsafe_allow_html=True)
-    components.html(
+    st.markdown("<div style='text-align: center; color: #888; font-size: 14px; margin-bottom: 10px;'>Workspace Buddy</div>", unsafe_allow_html=True)
+    st.markdown(
         """
-        <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-        <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
-            <lottie-player 
-                src="https://lottie.host/804d9c7c-4ab4-406a-93c0-3f00cc5538e1/4O3i1TtzbN.json" 
-                background="transparent" 
-                speed="1" 
-                style="width: 160px; height: 160px;" 
-                loop 
-                autoplay>
-            </lottie-player>
+        <div style="display: flex; justify-content: center;">
+            <img src="https://media.tenor.com/13BvM9v2yH8AAAAi/cat-typing.gif" width="120" style="border-radius: 10px;">
         </div>
-        """,
-        height=180
+        """, unsafe_allow_html=True
     )
 
 st.title("🚀 Campaign Asset Auto-Processor")
